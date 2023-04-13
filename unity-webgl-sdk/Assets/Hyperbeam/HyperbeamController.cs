@@ -32,6 +32,12 @@ namespace Hyperbeam
         /// </summary>
         public UnityEvent OnControlReturned;
 
+        /// <summary>
+        /// OnHyperbeamStop is fired when a call is made to <see cref="StopHyperbeamStream"/>
+        /// It will let any listeners know that the instance is about to be disposed.
+        /// </summary>
+        public UnityEvent OnHyperbeamStopped;
+
         private bool _hyperbeamControl = false;
         private float _volume = 0f;
         
@@ -89,15 +95,27 @@ namespace Hyperbeam
             Instance = new Hyperbeam(embedUrl, gameObject);
         }
 
+        /// <summary>
+        /// Stops the stream and disposes the Instance to make the controller safe to re-use.
+        /// Will invoke the <see cref="OnHyperbeamStopped"/> event to notify any listeners that the instance will be disposed soon.
+        /// </summary>
+        public void StopHyperbeamStream()
+        {
+            OnHyperbeamStopped?.Invoke();
+            Instance?.Dispose();
+            Instance = null;
+        }
+
         private void Start()
         {
             OnControlReturned ??= new UnityEvent();
             OnHyperbeamStart ??= new UnityEvent();
+            OnHyperbeamStopped ??= new UnityEvent();
         }
 
         private void OnDestroy()
         {
-            Instance?.Dispose();
+            StopHyperbeamStream();
         }
 
         private void OnDisable()
@@ -112,12 +130,6 @@ namespace Hyperbeam
             if (Instance == null) return;
             Instance.Volume = Volume;
             Instance.SetVideoPause(Paused);
-        }
-
-        public void DisposeInstance()
-        {
-            Instance?.Dispose();
-            Instance = null;
         }
 
         /// <summary>
